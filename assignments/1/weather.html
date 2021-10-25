@@ -5,18 +5,24 @@
   <p>{{ city }}</p>
   <button v-on:click="getWeather">Get Weather</button>
   <p v-if="willRain">It's going to rain there, so bring an umbrella!</p>
+  <p v-if="willBeCold">It's going to be cold there, so bring warm clothes!</p>
+  <p v-if="willBeWarm">It's going to be warm there, so bring cool clothes!</p>
+  <p v-if="willBeHot">It's going to be hot there, so bring sun cream!</p>
 </div>
 <script>
   var app = new Vue({
     el: '#app',
     data: {
       city: '',
-        forecastData: {list: [{weather:[{main: ''}]}]},
-      willRain: false
+        forecastData: {},
+      willRain: false,
+      willBeCold: false,
+      willBeWarm: false,
+      willBeHot: false
     },
     methods: {
       getWeather: getWeather,
-      checkIfWillRain: checkIfWillRain
+      checkWeather: checkWeather
     }
   })
 
@@ -27,16 +33,33 @@
             console.log(response)
             this.forecastData = response
         })
-        .then(response => this.checkIfWillRain())
+        .then(response => this.checkWeather())
   }
 
-  function checkIfWillRain() {
+  function checkWeather() {
     let list = this.forecastData.list
     this.willRain = false
+    this.willBeCold = false
+    this.willBeWarm = false
+    this.willBeHot = false
     for(item of list) {
-        if(item.weather[0].main === "Rain") {
-          this.willRain = true
-        }
+      let temp = toCelsius(item.main.temp)
+      if(temp >= -10 && temp <= 10) {
+        this.willBeCold = true
+      }
+      if(temp >= 10 && temp <= 20) {
+        this.willBeWarm = true
+      }
+      if(temp >= 20) {
+        this.willBeHot = true
+      }
+      if(item.weather[0].main === "Rain") {
+        this.willRain = true
+      }
     }
+  }
+
+  function toCelsius(kelvin) {
+    return kelvin - 273.15
   }
 </script>
