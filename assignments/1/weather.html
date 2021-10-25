@@ -4,21 +4,39 @@
   <input v-model="city">
   <p>{{ city }}</p>
   <button v-on:click="getWeather">Get Weather</button>
+  <p v-if="willRain">It's going to rain there, so bring an umbrella!</p>
 </div>
 <script>
   var app = new Vue({
     el: '#app',
     data: {
-      city: ''
+      city: '',
+        forecastData: {list: [{weather:[{main: ''}]}]},
+      willRain: false
     },
     methods: {
-        getWeather: getWeather
+      getWeather: getWeather,
+      checkIfWillRain: checkIfWillRain
     }
   })
 
   function getWeather(){
-      let promise = fetch(`http://localhost:3000/weather/${this.city}`)
-      promise.then(response => response.json())
-             .then(response => console.log(response))
+    let promise = fetch(`http://localhost:3000/weather/${this.city}`)
+    promise.then(response => response.json())
+        .then(response => {
+            console.log(response)
+            this.forecastData = response
+        })
+        .then(response => this.checkIfWillRain())
+  }
+
+  function checkIfWillRain() {
+    let list = this.forecastData.list
+    this.willRain = false
+    for(item of list) {
+        if(item.weather[0].main === "Rain") {
+          this.willRain = true
+        }
+    }
   }
 </script>
