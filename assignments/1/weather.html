@@ -9,11 +9,13 @@
   <p v-if="willBeHot">It's going to be hot there, so bring sun cream!</p>
   <table>
     <tr>
+      <th>Time</th>
       <th>Temperature</th>
       <th>Wind Speed</th>
       <th>Rainfall</th>
     </tr>
     <tr v-for="item in forecastData.list">
+      <td>{{ item.dt }}</td>
       <td>{{ item.main.temp }} °C</td>
       <td>{{ item.wind.speed }} m/s</td>
       <td>{{ item.rain["3h"] }} mm</td>
@@ -52,6 +54,8 @@
     for(item of list) {
         if(item.rain === undefined) item.rain = { "3h": 0 }
         item.main.temp = toCelsius(item.main.temp)
+        let datetime = new Date(item.dt * 1000)
+        item.dt = datetime.toLocaleString()
     }
     return data
   }
