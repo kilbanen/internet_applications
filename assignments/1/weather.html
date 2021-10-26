@@ -2,12 +2,23 @@
 <div id="app">
   <p>What city are you visiting?</p>
   <input v-model="city">
-  <p>{{ city }}</p>
   <button v-on:click="getWeather">Get Weather</button>
   <p v-if="willRain">It's going to rain there, so bring an umbrella!</p>
   <p v-if="willBeCold">It's going to be cold there, so bring warm clothes!</p>
   <p v-if="willBeWarm">It's going to be warm there, so bring cool clothes!</p>
   <p v-if="willBeHot">It's going to be hot there, so bring sun cream!</p>
+  <table>
+    <tr>
+      <th>Temperature</th>
+      <th>Wind Speed</th>
+      <th>Rainfall</th>
+    </tr>
+    <tr v-for="item in forecastData.list">
+      <td>{{ item.main.temp }} °C</td>
+      <td>{{ item.wind.speed }} m/s</td>
+      <td>{{ item.rain["3h"] }} mm</td>
+    </tr>
+  </table>
 </div>
 <script>
   var app = new Vue({
@@ -31,9 +42,18 @@
     promise.then(response => response.json())
         .then(response => {
             console.log(response)
-            this.forecastData = response
+            this.forecastData = cleanData(response)
         })
         .then(response => this.checkWeather())
+  }
+
+  function cleanData(data) {
+    let list = data.list
+    for(item of list) {
+        if(item.rain === undefined) item.rain = { "3h": 0 }
+        item.main.temp = toCelsius(item.main.temp)
+    }
+    return data
   }
 
   function checkWeather() {
@@ -43,7 +63,7 @@
     this.willBeWarm = false
     this.willBeHot = false
     for(item of list) {
-      let temp = toCelsius(item.main.temp)
+      let temp = item.main.temp
       if(temp >= -10 && temp <= 10) {
         this.willBeCold = true
       }
@@ -60,6 +80,6 @@
   }
 
   function toCelsius(kelvin) {
-    return kelvin - 273.15
+    return (kelvin - 273.15).toFixed(2)
   }
 </script>
