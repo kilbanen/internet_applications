@@ -19,7 +19,7 @@ function getPollutionData(req, res) {
   let lat = req.params.lat
   let lon = req.params.lon
   axios.get(`http://api.openweathermap.org/data/2.5/air_pollution?lat=${lat}&lon=${lon}&appid=${apiKey}`)
-       .then(response => console.log(response.data))
+       .then(response => res.json(response.data))
        .catch(err => console.log(err))
 }
 
