@@ -5,7 +5,7 @@
   <input placeholder="Name"></input>
   <input placeholder="Year"></input>
   <input placeholder="Rating"></input>
-  <button>Destroy Database</button>
+  <button v-on:click="destroyDatabase">Destroy Database</button>
 </div>
 <script>
   var app = new Vue({
@@ -13,12 +13,18 @@
     data: {
     },
     methods: {
-        createDatabase: createDatabase
+        createDatabase: createDatabase,
+        destroyDatabase: destroyDatabase
     }
   })
 
   function createDatabase(){
     fetch("http://localhost:3000/create")
+    .then(response => response.json())
+  }
+
+  function destroyDatabase(){
+    fetch("http://localhost:3000/destroy")
     .then(response => response.json())
   }
 </script>
