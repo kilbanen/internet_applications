@@ -1,6 +1,6 @@
 <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
 <div id="app">
-  <button>Create Database</button>
+  <button v-on:click="createDatabase">Create Database</button>
   <button>Query Database</button>
   <input placeholder="Name"></input>
   <input placeholder="Year"></input>
@@ -11,6 +11,14 @@
   var app = new Vue({
     el: '#app',
     data: {
+    },
+    methods: {
+        createDatabase: createDatabase
     }
   })
+
+  function createDatabase(){
+    fetch("http://localhost:3000/create")
+    .then(response => response.json())
+  }
 </script>
