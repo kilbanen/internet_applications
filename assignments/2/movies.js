@@ -81,7 +81,7 @@ const uploadMovies = () => {
           Item: {
               "year":  movie.year,
               "title": movie.title,
-              "info":  movie.info
+              "rating":  movie.info.rating
           }
       };
 
@@ -109,9 +109,46 @@ const destroyTable = () => {
   });
 }
 
+const queryTable = (req, res) => {
+  let year = Number(req.params.year);
+  let name = req.params.name;
+  let rating = Number(req.params.rating);
+  let docClient = new AWS.DynamoDB.DocumentClient();
+  console.log(`Querying for movies from ${year} starting with ${name} rated ${rating}+`);
+
+  var params = {
+      TableName : "Movies",
+      ProjectionExpression: "#yr, title, rating",
+      FilterExpression: "#yr = :yyyy AND begins_with(#tl, :nm) AND #rt > :rt",
+      ExpressionAttributeNames:{
+          "#yr": "year",
+          "#tl": "title",
+          "#rt": "rating"
+      },
+      ExpressionAttributeValues: {
+          ":yyyy": year,
+          ":nm": name,
+          ":rt": rating
+      }
+  };
+
+  docClient.scan(params, function(err, data) {
+      if (err) {
+          console.error("Unable to query. Error:", JSON.stringify(err, null, 2));
+      } else {
+          console.log("Query succeeded.");
+          res.json(data);
+          data.Items.forEach(function(item) {
+              console.log(" -", item.year + ": " + item.title + " (" + item.rating + ")");
+          });
+      }
+  });
+}
+
 app.use(cors())
 app.get('/create', createNewTable)
 app.get('/destroy', destroyTable)
+app.get('/query/:year/:name/:rating', queryTable)
 
 app.listen(port, () => {
   console.log(`Example app listening at http://localhost:${port}`)

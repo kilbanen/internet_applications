@@ -1,26 +1,42 @@
 <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
 <div id="app">
   <button v-on:click="createDatabase">Create Database</button>
-  <button>Query Database</button>
-  <input placeholder="Name"></input>
-  <input placeholder="Year"></input>
-  <input placeholder="Rating"></input>
+  <button v-on:click="queryDatabase">Query Database</button>
+  <input v-model="name" placeholder="Name"></input>
+  <input v-model="year" placeholder="Year"></input>
+  <input v-model="rating" placeholder="Rating"></input>
   <button v-on:click="destroyDatabase">Destroy Database</button>
+  <ul>
+    <li v-for="item in queryData.Items">
+      {{ item.year }}: {{ item.title }} ({{ item.rating }})
+    </li>
+  </ul>
 </div>
 <script>
   var app = new Vue({
     el: '#app',
     data: {
+        name: "",
+        year: 0,
+        rating: 0.0,
+        queryData: []
     },
     methods: {
         createDatabase: createDatabase,
-        destroyDatabase: destroyDatabase
+        destroyDatabase: destroyDatabase,
+        queryDatabase: queryDatabase
     }
   })
 
   function createDatabase(){
     fetch("http://localhost:3000/create")
     .then(response => response.json())
+  }
+
+  function queryDatabase(){
+    fetch(`http://localhost:3000/query/${this.year}/${this.name}/${this.rating}`)
+    .then(response => response.json())
+    .then(response => this.queryData = response)
   }
 
   function destroyDatabase(){
