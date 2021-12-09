@@ -3,13 +3,11 @@ const secretKey = process.env.SECRET_KEY
 const express = require('express')
 const axios = require('axios')
 const cors = require('cors')
-const app = express()
-const port = 3000
 const AWS = require("aws-sdk");
-const fs = require("fs");
-const filePath = "./moviedata.json";
 const bucketName = "csu44000assignment220";
 const key = "moviedata.json";
+const port = 3000
+const app = express()
 
 AWS.config.update({
   region: "eu-west-1",
@@ -17,27 +15,10 @@ AWS.config.update({
   secretAccessKey: secretKey
 });
 
-let dynamodb = new AWS.DynamoDB();
-let s3 = new AWS.S3({apiVersion: '2006-03-01'});
+const dynamodb = new AWS.DynamoDB();
+const s3 = new AWS.S3({apiVersion: '2006-03-01'});
 
-async function downloadFile(filePath, bucketName, key) {
-  let bucketParams = {
-    Bucket: bucketName,
-    Key: key
-  };
-
-  s3.getObject(bucketParams, (err, data) => {
-    if (err) { 
-      console.error(err);
-    } else {
-      fs.writeFileSync(filePath, data.Body.toString());
-      console.log(`${filePath} has been created!`);
-      setTimeout(uploadMovies, 3000);
-    }
-  });
-};
-
-const createNewTable = () => {
+function createNewTable() {
   AWS.config.update({
     endpoint: "https://dynamodb.eu-west-1.amazonaws.com"
   });
@@ -53,30 +34,41 @@ const createNewTable = () => {
       ],
       ProvisionedThroughput: {       
           ReadCapacityUnits: 1, 
-          WriteCapacityUnits: 1
+          WriteCapacityUnits: 5
       }
   };
-
   dynamodb.createTable(tableParams, function(err, data) {
       if (err) {
           console.error("Unable to create table. Error JSON:", JSON.stringify(err, null, 2));
-          downloadFile(filePath, bucketName, key);
       } else {
           console.log("Created table. Table description JSON:", JSON.stringify(data, null, 2));
-          downloadFile(filePath, bucketName, key);
+        getMovieData(bucketName, key);
       }
   });
 };
 
-const uploadMovies = () => {
+function getMovieData(bucketName, key) {
+  let params = {
+    Bucket: bucketName,
+    Key: key
+  };
+  s3.getObject(params, (err, data) => {
+    if (err) { 
+      console.error(err);
+    } else {
+      console.log("Movie data retrieved from S3 bucket.");
+      setTimeout(() => {
+        uploadMovies(JSON.parse(data.Body.toString()));
+      }, 7000);
+    }
+  });
+};
+
+function uploadMovies(allMovies) {
   let docClient = new AWS.DynamoDB.DocumentClient();
-
   console.log("Importing movies into DynamoDB. Please wait.");
-
-
-  let allMovies = JSON.parse(fs.readFileSync('moviedata.json', 'utf8'));
   allMovies.forEach(function(movie) {
-      var params = {
+      let params = {
           TableName: "Movies",
           Item: {
               "year":  movie.year,
@@ -84,7 +76,6 @@ const uploadMovies = () => {
               "rating":  movie.info.rating
           }
       };
-
       docClient.put(params, function(err, data) {
          if (err) {
              console.error("Unable to add movie", movie.title, ". Error JSON:", JSON.stringify(err, null, 2));
@@ -95,11 +86,10 @@ const uploadMovies = () => {
   });
 };
 
-const destroyTable = () => {
-  var params = {
+function destroyTable() {
+  let params = {
     TableName : "Movies"
   };
-
   dynamodb.deleteTable(params, function(err, data) {
       if (err) {
           console.error("Unable to delete table. Error JSON:", JSON.stringify(err, null, 2));
@@ -109,14 +99,12 @@ const destroyTable = () => {
   });
 }
 
-const queryTable = (req, res) => {
+function queryTable(req, res) {
   let year = Number(req.params.year);
   let name = req.params.name;
   let rating = Number(req.params.rating);
   let docClient = new AWS.DynamoDB.DocumentClient();
-  console.log(`Querying for movies from ${year} starting with ${name} rated ${rating}+`);
-
-  var params = {
+  let params = {
       TableName : "Movies",
       ProjectionExpression: "#yr, title, rating",
       FilterExpression: "#yr = :yyyy AND begins_with(#tl, :nm) AND #rt > :rt",
@@ -131,7 +119,7 @@ const queryTable = (req, res) => {
           ":rt": rating
       }
   };
-
+  console.log(`Querying for movies from ${year} starting with ${name} rated ${rating}+`);
   docClient.scan(params, function(err, data) {
       if (err) {
           console.error("Unable to query. Error:", JSON.stringify(err, null, 2));
